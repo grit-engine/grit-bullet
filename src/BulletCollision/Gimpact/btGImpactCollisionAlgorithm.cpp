@@ -701,11 +701,15 @@ void btGImpactCollisionAlgorithm::gimpact_vs_compoundshape(btCollisionObject * b
 	int i = shape1->getNumChildShapes();
 	while(i--)
 	{
+		assert(i >= 0);
+		assert(i < shape1->getNumChildShapes());
 
 		btCollisionShape * colshape1 = shape1->getChildShape(i);
 		btTransform childtrans1 = orgtrans1*shape1->getChildTransform(i);
 
 		body1->setWorldTransform(childtrans1);
+
+		(swapped ? m_triface0 : m_triface1) = i;
 
 		//collide child shape
 		gimpact_vs_shape(body0, body1,
@@ -838,15 +842,30 @@ void btGImpactCollisionAlgorithm::gimpact_vs_concave(
 }
 
 
+template<class T> static void swap(T &a, T &b) { T tmp = a; a = b; b = tmp; }
 
 void btGImpactCollisionAlgorithm::processCollision (btCollisionObject* body0,btCollisionObject* body1,const btDispatcherInfo& dispatchInfo,btManifoldResult* resultOut)
 {
     clearCache();
 
     m_resultOut = resultOut;
+	m_triface0 = m_resultOut->m_index0;
+	m_part0 = m_resultOut->m_partId0;
+	m_triface1 = m_resultOut->m_index1;
+	m_part1 = m_resultOut->m_partId1;
 	m_dispatchInfo = &dispatchInfo;
     btGImpactShapeInterface * gimpactshape0;
     btGImpactShapeInterface * gimpactshape1;
+
+    // if the gimpact shape is nested in a compound shape, we can be given a swapped body0 and body1
+    // so ensure this is not the case
+    if (m_resultOut->getBody0Internal() == body1)
+    {
+        swap(body0, body1);
+        swap(m_triface0, m_triface1);
+        swap(m_part0, m_part1);
+    }
+
 
 	if (body0->getCollisionShape()->getShapeType()==GIMPACT_SHAPE_PROXYTYPE)
 	{
@@ -867,6 +886,10 @@ void btGImpactCollisionAlgorithm::processCollision (btCollisionObject* body0,btC
 	else if (body1->getCollisionShape()->getShapeType()==GIMPACT_SHAPE_PROXYTYPE )
 	{
 		gimpactshape1 = static_cast<btGImpactShapeInterface *>(body1->getCollisionShape());
+
+        // hack: swap the original values, they get swapped back again later
+        swap(m_triface0, m_triface1);
+        swap(m_part0, m_part1);
 
 		gimpact_vs_shape(body1,body0,gimpactshape1,body0->getCollisionShape(),true);
 	}

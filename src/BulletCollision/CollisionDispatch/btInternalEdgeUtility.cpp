@@ -2,6 +2,7 @@
 
 #include "BulletCollision/CollisionShapes/btBvhTriangleMeshShape.h"
 #include "BulletCollision/CollisionShapes/btTriangleShape.h"
+#include "BulletCollision/CollisionShapes/btCompoundShape.h"
 #include "BulletCollision/CollisionDispatch/btCollisionObject.h"
 #include "BulletCollision/NarrowPhaseCollision/btManifoldPoint.h"
 #include "LinearMath/btIDebugDraw.h"
@@ -456,7 +457,24 @@ void btAdjustInternalEdgeContacts(btManifoldPoint& cp, const btCollisionObject* 
 	if (colObj0->getCollisionShape()->getShapeType() != TRIANGLE_SHAPE_PROXYTYPE)
 		return;
 
-	btBvhTriangleMeshShape* trimesh = (btBvhTriangleMeshShape*)colObj0->getRootCollisionShape();
+	const btCollisionShape *root = colObj0->getRootCollisionShape();
+	if (root->getShapeType() == COMPOUND_SHAPE_PROXYTYPE) {
+		const btCompoundShape *compound = (const btCompoundShape*) root;
+		// hunt for a trimesh in the compound
+		int found = 0;
+		for (int i=0 ; i<compound->getNumChildShapes() ; ++i) {
+			const btCollisionShape *s = compound->getChildShape(i);
+			if (s->getShapeType() == TRIANGLE_MESH_SHAPE_PROXYTYPE) {
+				found++;
+				root = s;
+			}
+		}
+		assert(found==1);
+	}
+
+    assert(root->getShapeType() == TRIANGLE_MESH_SHAPE_PROXYTYPE);
+
+	btBvhTriangleMeshShape* trimesh = (btBvhTriangleMeshShape*)root;
 	btTriangleInfoMap* triangleInfoMapPtr = (btTriangleInfoMap*) trimesh->getTriangleInfoMap();
 	if (!triangleInfoMapPtr)
 		return;

@@ -213,6 +213,7 @@ protected:
 
 	void	growTables(const Key& key)
 	{
+        (void) key;
 		int newCapacity = m_valueArray.capacity();
 
 		if (m_hashTable.size() < newCapacity)

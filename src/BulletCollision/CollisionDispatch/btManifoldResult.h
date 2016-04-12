@@ -44,13 +44,13 @@ protected:
 
 	btCollisionObject* m_body0;
 	btCollisionObject* m_body1;
+
+public:
 	int	m_partId0;
 	int m_partId1;
 	int m_index0;
 	int m_index1;
 	
-
-public:
 
 	btManifoldResult()
 #ifdef DEBUG_PART_INDEX
