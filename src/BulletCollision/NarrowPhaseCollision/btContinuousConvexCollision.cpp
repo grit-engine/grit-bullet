@@ -36,6 +36,14 @@ m_convexA(convexA),m_convexB(convexB)
 /// You don't want your game ever to lock-up.
 #define MAX_ITERATIONS 64
 
+// Workaround a bug that caused cars to jump around in Grit.  Test case at
+// engine/tests/engine/cast_sphere/
+// Note the pop_options below.
+#ifdef __GNUC__
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+#endif
+
 bool	btContinuousConvexCollision::calcTimeOfImpact(
 				const btTransform& fromA,
 				const btTransform& toA,
@@ -234,3 +242,7 @@ bool	btContinuousConvexCollision::calcTimeOfImpact(
 */
 
 }
+
+#ifdef __GNUC__
+#pragma GCC pop_options
+#endif
